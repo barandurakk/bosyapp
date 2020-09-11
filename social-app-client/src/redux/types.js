@@ -25,3 +25,4 @@ export const SET_USERLIST = "SET_USERLIST";
 export const UPDATE_BOS = "UPDATE_BOS";
 export const SEARCH_TAG = "SEARCH_TAG";
 export const SEARCH_USER = "SEARCH_USER";
+export const LOAD_MORE_BOS = "LOAD_MORE_BOS";

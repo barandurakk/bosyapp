@@ -32,6 +32,8 @@ exports.validateSignUpData = (data) => {
     errors.handle = "Senin gibi boş olamaz!";
   } else if (data.handle.length > 20) {
     errors.handle = "20 karakterden uzun olamaz!";
+  } else if (/\s/.test(data.handle)) {
+    errors.handle = "Handle boşluk içeremez!";
   }
 
   return {

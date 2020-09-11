@@ -31,7 +31,7 @@ axios.defaults.baseURL = "https://europe-west1-social-app-f0b76.cloudfunctions.n
 const token = localStorage.FBIdToken;
 if (token) {
   const decodedToken = jwtDecode(token);
-  if (decodedToken.exp * 1000 * 10 < Date.now()) {
+  if (decodedToken.exp * 1000 < Date.now()) {
     store.dispatch(logoutUser());
     window.location.href = "/login";
   } else {

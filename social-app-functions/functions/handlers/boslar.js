@@ -4,11 +4,10 @@ const { db } = require("../util/admin");
 exports.getAllBos = (req, res) => {
   db.collection("boslar")
     .orderBy("createdAt", "desc")
-    .limit(50)
     .get()
-    .then(data => {
+    .then((data) => {
       let boslar = [];
-      data.forEach(doc => {
+      data.forEach((doc) => {
         boslar.push({
           bosId: doc.id,
           body: doc.data().body,
@@ -17,12 +16,65 @@ exports.getAllBos = (req, res) => {
           commentCount: doc.data().commentCount,
           likeCount: doc.data().likeCount,
           userImage: doc.data().userImage,
-          userNick: doc.data().userNick
+          userNick: doc.data().userNick,
         });
       });
       return res.json(boslar);
     })
-    .catch(err => console.error(err));
+    .catch((err) => console.error(err));
+};
+
+//sınırlı boş getir
+exports.getLimitedBos = (req, res) => {
+  const limitAt = parseInt(req.body.limitAt);
+  const lastVisible = req.body.lastVisible;
+
+  if (!lastVisible) {
+    db.collection("boslar")
+      .orderBy("createdAt", "desc")
+      .limit(limitAt)
+      .get()
+      .then((data) => {
+        let boslar = [];
+        data.forEach((doc) => {
+          boslar.push({
+            bosId: doc.id,
+            body: doc.data().body,
+            userHandle: doc.data().userHandle,
+            createdAt: doc.data().createdAt,
+            commentCount: doc.data().commentCount,
+            likeCount: doc.data().likeCount,
+            userImage: doc.data().userImage,
+            userNick: doc.data().userNick,
+          });
+        });
+        return res.json(boslar);
+      })
+      .catch((err) => console.error(err));
+  } else {
+    db.collection("boslar")
+      .orderBy("createdAt", "desc")
+      .startAt(lastVisible)
+      .limit(limitAt)
+      .get()
+      .then((data) => {
+        let boslar = [];
+        data.forEach((doc) => {
+          boslar.push({
+            bosId: doc.id,
+            body: doc.data().body,
+            userHandle: doc.data().userHandle,
+            createdAt: doc.data().createdAt,
+            commentCount: doc.data().commentCount,
+            likeCount: doc.data().likeCount,
+            userImage: doc.data().userImage,
+            userNick: doc.data().userNick,
+          });
+        });
+        return res.json(boslar);
+      })
+      .catch((err) => console.error(err));
+  }
 };
 
 //boş yap
@@ -34,17 +86,17 @@ exports.postOneBos = (req, res) => {
     createdAt: new Date().toISOString(),
     userNick: req.user.nickname,
     likeCount: 0,
-    commentCount: 0
+    commentCount: 0,
   };
 
   db.collection("boslar")
     .add(newBos)
-    .then(doc => {
+    .then((doc) => {
       const resBos = newBos;
       resBos.bosId = doc.id;
       res.json(resBos);
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(500).json({ error: "Birşeyler yanlış gitti :/" });
       console.error(err);
     });
@@ -55,7 +107,7 @@ exports.getBos = (req, res) => {
   let bosData = {};
   db.doc(`/boslar/${req.params.bosId}`)
     .get()
-    .then(doc => {
+    .then((doc) => {
       if (!doc.exists) {
         return res.status(404).json({ error: "Aradıgınız boş silinmiş veya hiç orada olmamış :(" });
       }
@@ -67,14 +119,14 @@ exports.getBos = (req, res) => {
         .where("bosId", "==", req.params.bosId)
         .get();
     })
-    .then(data => {
+    .then((data) => {
       bosData.comments = [];
-      data.forEach(comment => {
+      data.forEach((comment) => {
         bosData.comments.push(comment.data());
       });
       return res.json(bosData);
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       return res.status(500).json({ error: err.code });
     });
@@ -92,12 +144,12 @@ exports.commentOnBos = (req, res) => {
     bosId: req.params.bosId,
     userImage: req.user.imageUrl,
     commentId: null,
-    userNick: req.user.nickname
+    userNick: req.user.nickname,
   };
 
   db.doc(`/boslar/${req.params.bosId}`)
     .get()
-    .then(doc => {
+    .then((doc) => {
       if (!doc.exists) {
         return res.status(404).json({ error: "Böyle bir boş artık yok :(" });
       }
@@ -106,14 +158,14 @@ exports.commentOnBos = (req, res) => {
     .then(() => {
       return db.collection("comments").add(newComment);
     })
-    .then(ref => {
+    .then((ref) => {
       newComment.commentId = ref.id;
       return db.doc(`/comments/${ref.id}`).update({ commentId: ref.id });
     })
     .then(() => {
       res.json(newComment);
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ error: "Birşeyler yanlış gitti :/" });
     });
@@ -133,7 +185,7 @@ exports.likeBos = (req, res) => {
 
   bosDoc
     .get()
-    .then(doc => {
+    .then((doc) => {
       if (doc.exists) {
         bosData = doc.data();
         bosData.bosId = doc.id;
@@ -142,13 +194,13 @@ exports.likeBos = (req, res) => {
         return res.status(404).json({ error: "Böyle bir boş artık yok :(" });
       }
     })
-    .then(data => {
+    .then((data) => {
       if (data.empty) {
         return db
           .collection("likes")
           .add({
             userHandle: req.user.handle,
-            bosId: req.params.bosId
+            bosId: req.params.bosId,
           })
           .then(() => {
             bosData.likeCount++;
@@ -161,7 +213,7 @@ exports.likeBos = (req, res) => {
         return res.status(400).json({ error: "Bu Boşu zaten beğendin." });
       }
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ error: err.code });
     });
@@ -181,7 +233,7 @@ exports.unlikeBos = (req, res) => {
 
   bosDoc
     .get()
-    .then(doc => {
+    .then((doc) => {
       if (doc.exists) {
         bosData = doc.data();
         bosData.bosId = doc.id;
@@ -190,7 +242,7 @@ exports.unlikeBos = (req, res) => {
         return res.status(404).json({ error: "Böyle bir boş artık yok :(" });
       }
     })
-    .then(data => {
+    .then((data) => {
       if (data.empty) {
         return res.status(400).json({ error: "İlk önce beğenmelisin." });
       } else {
@@ -206,7 +258,7 @@ exports.unlikeBos = (req, res) => {
           });
       }
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ error: err.code });
     });
@@ -216,7 +268,7 @@ exports.unlikeBos = (req, res) => {
 exports.deleteBos = (req, res) => {
   db.doc(`/boslar/${req.params.bosId}`)
     .get()
-    .then(doc => {
+    .then((doc) => {
       if (!doc.exists) {
         res.status(404).json({ error: "Böyle bir boş artık yok :(" });
       }
@@ -231,7 +283,7 @@ exports.deleteBos = (req, res) => {
     .then(() => {
       res.json({ message: `Boş başarılı bir şekilde silindi.` });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ error: err.code });
     });
@@ -244,7 +296,7 @@ exports.editBos = (req, res) => {
   else {
     db.doc(`/boslar/${req.params.bosId}`)
       .get()
-      .then(doc => {
+      .then((doc) => {
         if (!doc.exists) {
           return res.status(404).json({ editBos: "Böyle bir boş artık yok :/" });
         }
@@ -260,7 +312,7 @@ exports.editBos = (req, res) => {
       .then(() => {
         res.json({ message: "Boş başarılı bir şekilde güncellendi." });
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
         res.status(500).json({ error: err.code });
       });
@@ -271,14 +323,14 @@ exports.editBos = (req, res) => {
 exports.deleteComment = (req, res) => {
   db.doc(`/comments/${req.params.commentId}`)
     .get()
-    .then(doc => {
+    .then((doc) => {
       if (!doc.exists) {
         res.status(404).json({ error: "Böyle bir yorum artık yok :(" });
       }
       if (req.user.role === "admin") {
         db.doc(`/boslar/${doc.data().bosId}`)
           .get()
-          .then(doc => {
+          .then((doc) => {
             return doc.ref.update({ commentCount: doc.data().commentCount - 1 });
           });
       } else if (doc.data().userHandle !== req.user.handle) {
@@ -286,7 +338,7 @@ exports.deleteComment = (req, res) => {
       } else {
         db.doc(`/boslar/${doc.data().bosId}`)
           .get()
-          .then(doc => {
+          .then((doc) => {
             return doc.ref.update({ commentCount: doc.data().commentCount - 1 });
           });
       }
@@ -297,7 +349,7 @@ exports.deleteComment = (req, res) => {
     .then(() => {
       return res.json({ message: "Yorum silindi." });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ error: err.code });
     });

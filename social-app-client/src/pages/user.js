@@ -13,7 +13,7 @@ import { getUserPageData } from "../redux/actions/dataActions";
 class user extends Component {
   state = {
     profile: null,
-    bosIdParam: null
+    bosIdParam: null,
   };
 
   UNSAFE_componentWillMount() {
@@ -25,26 +25,26 @@ class user extends Component {
     this.props.getUserPageData(handle);
     axios
       .get(`/user/${handle}`)
-      .then(res => {
+      .then((res) => {
         this.setState({
-          profile: res.data.user
+          profile: res.data.user,
         });
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.log(err));
   }
 
   render() {
-    const { boslar, loading } = this.props.data;
+    const { userBoslar, loading } = this.props.data;
     const { bosIdParam } = this.state;
 
     const boslarMarkup = loading ? (
       <BosSkeleton />
-    ) : boslar === null ? (
+    ) : userBoslar === null ? (
       <p>Boş yapmamış :(</p>
     ) : !bosIdParam ? (
-      boslar.map(bos => <Boslar key={bos.bosId} bos={bos} />)
+      userBoslar.map((bos) => <Boslar key={bos.bosId} bos={bos} />)
     ) : (
-      boslar.map(bos => {
+      userBoslar.map((bos) => {
         if (bos.bosId !== bosIdParam) {
           return <Boslar key={bos.bosId} bos={bos} />;
         } else {
@@ -70,8 +70,8 @@ class user extends Component {
   }
 }
 
-const mapStateToProps = state => ({
-  data: state.data
+const mapStateToProps = (state) => ({
+  data: state.data,
 });
 
 export default connect(mapStateToProps, { getUserPageData })(user);

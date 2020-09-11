@@ -18,7 +18,8 @@ const {
   unlikeBos,
   deleteBos,
   deleteComment,
-  editBos
+  editBos,
+  getLimitedBos,
 } = require("./handlers/boslar");
 const {
   login,
@@ -29,11 +30,12 @@ const {
   getUserDetails,
   markNotificationsRead,
   getAllUsers,
-  forgotPass
+  forgotPass,
 } = require("./handlers/users");
 
 //boş routes
 app.get("/boslar", getAllBos); //Tüm boşları al
+app.post("/limitedboslar", getLimitedBos); //Limit gönder ve boş al
 app.post("/bosyap", FBAuth, postOneBos); //Boş yap
 app.get("/boslar/:bosId", getBos); //Id'ye göre boş ve yorumlarını çek
 app.get("/boslar/:bosId/delete", FBAuth, deleteBos); //bir boş sil
@@ -61,11 +63,11 @@ exports.api = functions.region("europe-west1").https.onRequest(app);
 exports.createNotificationOnLike = functions
   .region("europe-west1")
   .firestore.document("likes/{id}")
-  .onCreate(snapshot => {
+  .onCreate((snapshot) => {
     return db
       .doc(`/boslar/${snapshot.data().bosId}`)
       .get()
-      .then(doc => {
+      .then((doc) => {
         if (doc.exists && doc.data().userHandle !== snapshot.data().userHandle) {
           return db.doc(`/notifications/${snapshot.id}`).set({
             createdAt: new Date().toISOString(),
@@ -73,11 +75,11 @@ exports.createNotificationOnLike = functions
             sender: snapshot.data().userHandle,
             type: "like",
             read: false,
-            bosId: doc.id
+            bosId: doc.id,
           });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
       });
   });
@@ -85,11 +87,11 @@ exports.createNotificationOnLike = functions
 exports.deleteNotificationOnUnLike = functions
   .region("europe-west1")
   .firestore.document("likes/{id}")
-  .onDelete(snapshot => {
+  .onDelete((snapshot) => {
     return db
       .doc(`/notifications/${snapshot.id}`)
       .delete()
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
       });
   });
@@ -97,11 +99,11 @@ exports.deleteNotificationOnUnLike = functions
 exports.deleteNotificationOnCommentDelete = functions
   .region("europe-west1")
   .firestore.document("comments/{id}")
-  .onDelete(snapshot => {
+  .onDelete((snapshot) => {
     return db
       .doc(`/notifications/${snapshot.id}`)
       .delete()
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
       });
   });
@@ -109,11 +111,11 @@ exports.deleteNotificationOnCommentDelete = functions
 exports.createNotificationOnComment = functions
   .region("europe-west1")
   .firestore.document("comments/{id}")
-  .onCreate(snapshot => {
+  .onCreate((snapshot) => {
     return db
       .doc(`/boslar/${snapshot.data().bosId}`)
       .get()
-      .then(doc => {
+      .then((doc) => {
         if (doc.exists && doc.data().userHandle !== snapshot.data().userHandle) {
           return db.doc(`/notifications/${snapshot.id}`).set({
             createdAt: new Date().toISOString(),
@@ -121,11 +123,11 @@ exports.createNotificationOnComment = functions
             sender: snapshot.data().userHandle,
             type: "comment",
             read: false,
-            bosId: doc.id
+            bosId: doc.id,
           });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
       });
   });
@@ -133,7 +135,7 @@ exports.createNotificationOnComment = functions
 exports.onUserImageChange = functions
   .region("europe-west1")
   .firestore.document("/users/{id}")
-  .onUpdate(change => {
+  .onUpdate((change) => {
     if (change.before.data().imageUrl !== change.after.data().imageUrl) {
       console.log("resim değişti");
       const batch = db.batch();
@@ -141,8 +143,8 @@ exports.onUserImageChange = functions
         .collection("boslar")
         .where("userHandle", "==", change.before.data().handle)
         .get()
-        .then(data => {
-          data.forEach(doc => {
+        .then((data) => {
+          data.forEach((doc) => {
             const bos = db.doc(`/boslar/${doc.id}`);
             batch.update(bos, { userImage: change.after.data().imageUrl });
           });
@@ -155,8 +157,8 @@ exports.onUserImageChange = functions
         .collection("boslar")
         .where("userHandle", "==", change.before.data().handle)
         .get()
-        .then(data => {
-          data.forEach(doc => {
+        .then((data) => {
+          data.forEach((doc) => {
             const bos = db.doc(`/boslar/${doc.id}`);
             batch.update(bos, { userNick: change.after.data().nickname });
           });
@@ -165,29 +167,38 @@ exports.onUserImageChange = functions
     } else return true;
   });
 
-// exports.onNicknameChange = functions
-//   .region("europe-west1")
-//   .firestore.document("/users/{id}")
-//   .onUpdate(change => {
-//     if (change.before.data().nickname !== change.after.data().nickname) {
-//       console.log(change.before.data().nickname);
-//       console.log(change.after.data().nickname);
-//       const batch = db.batch();
-//       return db
-//         .collection("boslar")
-//         .where("userHandle", "==", change.before.data().handle)
-//         .get()
-//         .then(data => {
-//           data.forEach(doc => {
-//             const bos = db.doc(`/boslar/${doc.id}`);
-//             if (data.data().userNick !== undefined) {
-//               batch.update(bos, { userNick: change.after.data().nickname });
-//             } else return batch.update(bos, { userNick: change.after.data().handle });
-//           });
-//           return batch.commit();
-//         });
-//     } else return true;
-//   });
+exports.onUserChangeOnComments = functions
+  .region("europe-west1")
+  .firestore.document("/users/{id}")
+  .onUpdate((change) => {
+    if (change.before.data().imageUrl !== change.after.data().imageUrl) {
+      const batch = db.batch();
+      return db
+        .collection("comments")
+        .where("userHandle", "==", change.before.data().handle)
+        .get()
+        .then((data) => {
+          data.forEach((doc) => {
+            const comment = db.doc(`/comments/${doc.id}`);
+            batch.update(comment, { userImage: change.after.data().imageUrl });
+          });
+          return batch.commit();
+        });
+    } else if (change.before.data().nickname !== change.after.data().nickname) {
+      const batch = db.batch();
+      return db
+        .collection("comments")
+        .where("userHandle", "==", change.before.data().handle)
+        .get()
+        .then((data) => {
+          data.forEach((doc) => {
+            const comment = db.doc(`/comments/${doc.id}`);
+            batch.update(comment, { userNick: change.after.data().nickname });
+          });
+          return batch.commit();
+        });
+    } else return true;
+  });
 
 exports.onBosDelete = functions
   .region("europe-west1")
@@ -199,31 +210,25 @@ exports.onBosDelete = functions
       .collection("comments")
       .where("bosId", "==", bosId)
       .get()
-      .then(data => {
-        data.forEach(doc => {
+      .then((data) => {
+        data.forEach((doc) => {
           batch.delete(db.doc(`/comments/${doc.id}`));
         });
-        return db
-          .collection("likes")
-          .where("bosId", "==", bosId)
-          .get();
+        return db.collection("likes").where("bosId", "==", bosId).get();
       })
-      .then(data => {
-        data.forEach(doc => {
+      .then((data) => {
+        data.forEach((doc) => {
           batch.delete(db.doc(`/likes/${doc.id}`));
         });
-        return db
-          .collection("notifications")
-          .where("bosId", "==", bosId)
-          .get();
+        return db.collection("notifications").where("bosId", "==", bosId).get();
       })
-      .then(data => {
-        data.forEach(doc => {
+      .then((data) => {
+        data.forEach((doc) => {
           batch.delete(db.doc(`/notifications/${doc.id}`));
         });
         return batch.commit();
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
       });
   });

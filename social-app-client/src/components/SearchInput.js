@@ -2,6 +2,7 @@ import React, { Fragment } from "react";
 import { connect } from "react-redux";
 import { searchTag, searchUser, getBos, getAllUsers } from "../redux/actions/dataActions";
 import Link from "react-router-dom/Link";
+import { withRouter } from "react-router-dom";
 
 //mui
 import withStyles from "@material-ui/core/styles/withStyles";
@@ -50,9 +51,35 @@ class SearchInput extends React.Component {
     if (this.state.keyword.charAt(0) === "#" || this.state.keyword.charAt(0) === "@") {
       keyword = keyword.substr(1);
     }
+    let location = {
+      pathname: "/search",
+      keywordProps: {
+        keyword: keyword,
+      },
+    };
+
     this.props.searchTag(keyword);
     this.props.searchUser(keyword);
-    this.setState({ keyword: "" });
+    this.props.history.push(location);
+  };
+
+  handleKeyDown = (event) => {
+    if (event.keyCode === 13) {
+      let keyword = this.state.keyword;
+      if (this.state.keyword.charAt(0) === "#" || this.state.keyword.charAt(0) === "@") {
+        keyword = keyword.substr(1);
+      }
+      let location = {
+        pathname: "/search",
+        keywordProps: {
+          keyword: keyword,
+        },
+      };
+
+      this.props.searchTag(keyword);
+      this.props.searchUser(keyword);
+      this.props.history.push(location);
+    }
   };
 
   handleChange = (event) => {
@@ -63,26 +90,20 @@ class SearchInput extends React.Component {
 
   render() {
     const { classes } = this.props;
+
     return (
       <Fragment>
         <div className={classes.searchWrapper}>
-          <Link
-            to={{
-              pathname: "/search",
-              keywordProps: {
-                keyword: this.state.keyword,
-              },
-            }}
-          >
-            <Fab onClick={this.handleSearch} className={classes.searchIconWrapper}>
-              <SearchIcon className={classes.searchIcon} />
-            </Fab>
-          </Link>
+          <Fab onClick={this.handleSearch} className={classes.searchIconWrapper}>
+            <SearchIcon className={classes.searchIcon} />
+          </Fab>
+
           <InputBase
             className={classes.search}
             value={this.state.keyword}
             name="keyword"
             onChange={this.handleChange}
+            onKeyDown={(event) => this.handleKeyDown(event)}
             placeholder="Etiket veya kişi arayın..."
           />
         </div>
@@ -92,5 +113,5 @@ class SearchInput extends React.Component {
 }
 
 export default connect(null, { searchTag, searchUser, getBos, getAllUsers })(
-  withStyles(styles)(SearchInput)
+  withStyles(styles)(withRouter(SearchInput))
 );

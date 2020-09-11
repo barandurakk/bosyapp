@@ -14,212 +14,233 @@ import {
   DELETE_COMMENT,
   SET_USERLIST,
   SEARCH_TAG,
-  SEARCH_USER
+  SEARCH_USER,
+  LOAD_MORE_BOS,
 } from "../types";
 import axios from "axios";
 
 //Get all bos
-export const getBos = () => dispatch => {
+export const getBos = () => (dispatch) => {
   dispatch({ type: LOADING_DATA });
 
   axios
     .get("/boslar")
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: SET_BOSLAR,
-        payload: res.data
+        payload: res.data,
       });
     })
-    .catch(err => {
+    .catch((err) => {
       dispatch({
         type: SET_BOSLAR,
-        payload: []
+        payload: [],
+      });
+    });
+};
+
+//get batch of bos
+export const getBatchBos = (bosFilter) => (dispatch) => {
+  dispatch({ type: LOADING_DATA });
+
+  axios
+    .post("/limitedboslar", bosFilter)
+    .then((res) => {
+      dispatch({
+        type: LOAD_MORE_BOS,
+        payload: res.data,
+      });
+    })
+    .catch((err) => {
+      dispatch({
+        type: LOAD_MORE_BOS,
+        payload: [],
       });
     });
 };
 
 //get All users
-export const getAllUsers = () => dispatch => {
+export const getAllUsers = () => (dispatch) => {
   dispatch({ type: LOADING_DATA });
 
   axios
     .get("/users")
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: SET_USERLIST,
-        payload: res.data
+        payload: res.data,
       });
     })
-    .catch(err => {
+    .catch((err) => {
       dispatch({
         type: SET_USERLIST,
-        payload: []
+        payload: [],
       });
     });
 };
 
 //Like bos
-export const likeBos = bosId => dispatch => {
+export const likeBos = (bosId) => (dispatch) => {
   axios
     .get(`boslar/${bosId}/like`)
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: LIKE_BOS,
-        payload: res.data
+        payload: res.data,
       });
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
 };
 
 //Unlike bos
-export const unlikeBos = bosId => dispatch => {
+export const unlikeBos = (bosId) => (dispatch) => {
   axios
     .get(`boslar/${bosId}/unlike`)
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: UNLIKE_BOS,
-        payload: res.data
+        payload: res.data,
       });
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
 };
 
 //delete bos
-export const deleteBos = bosId => dispatch => {
+export const deleteBos = (bosId) => (dispatch) => {
   axios
     .get(`/boslar/${bosId}/delete`)
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: DELETE_BOS,
-        payload: bosId
+        payload: bosId,
       });
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
 };
 
 //delete comment
-export const deleteComment = commentId => dispatch => {
+export const deleteComment = (commentId) => (dispatch) => {
   dispatch({ type: LOADING_UI });
   axios
     .get(`/comments/${commentId}/delete`)
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: DELETE_COMMENT,
-        payload: commentId
+        payload: commentId,
       });
       dispatch({ type: STOP_LOADING_UI });
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
 };
 
 //edit boş
-export const editBos = (bosId, bosBody) => dispatch => {
+export const editBos = (bosId, bosBody) => (dispatch) => {
   dispatch({ type: LOADING_UI });
   axios
     .post(`/boslar/${bosId}/update`, bosBody)
-    .then(res => {
+    .then((res) => {
       dispatch(getBos());
       dispatch({ type: CLEAR_ERRORS });
     })
-    .catch(err => {
+    .catch((err) => {
       dispatch({
         type: SET_ERRORS,
-        payload: err.response.data
+        payload: err.response.data,
       });
       console.log(err);
     });
 };
 
 //Boş Dialog
-export const getABos = bosId => dispatch => {
+export const getABos = (bosId) => (dispatch) => {
   dispatch({ type: LOADING_UI });
   axios
     .get(`/boslar/${bosId}`)
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: SET_BOS,
-        payload: res.data
+        payload: res.data,
       });
       dispatch({ type: STOP_LOADING_UI });
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
 };
 
-export const bosyap = bosData => dispatch => {
+export const bosyap = (bosData) => (dispatch) => {
   dispatch({ type: LOADING_UI });
   axios
     .post("/bosyap", bosData)
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: BOS_YAP,
-        payload: res.data
+        payload: res.data,
       });
       dispatch({ type: CLEAR_ERRORS });
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
 };
 
 //comment
-export const submitComment = (bosId, commentData) => dispatch => {
+export const submitComment = (bosId, commentData) => (dispatch) => {
   axios
     .post(`/boslar/${bosId}/comment`, commentData)
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: SUBMIT_COMMENT,
-        payload: res.data
+        payload: res.data,
       });
       dispatch({ type: CLEAR_ERRORS });
     })
-    .catch(err => {
+    .catch((err) => {
       dispatch({
         type: SET_ERRORS,
-        payload: err.response.data
+        payload: err.response.data,
       });
     });
 };
 
 //search tag
-export const searchTag = keyword => dispatch => {
+export const searchTag = (keyword) => (dispatch) => {
   dispatch({
     type: SEARCH_TAG,
-    payload: keyword
+    payload: keyword,
   });
 };
 
 //search user
-export const searchUser = keyword => dispatch => {
+export const searchUser = (keyword) => (dispatch) => {
   dispatch({
     type: SEARCH_USER,
-    payload: keyword
+    payload: keyword,
   });
 };
 
-export const getUserPageData = userHandle => dispatch => {
+export const getUserPageData = (userHandle) => (dispatch) => {
   dispatch({ type: LOADING_DATA });
   axios
     .get(`/user/${userHandle}`)
-    .then(res => {
+    .then((res) => {
       dispatch({
         type: SET_BOSLAR,
-        payload: res.data.boslar
+        payload: res.data.boslar,
       });
     })
-    .catch(err => {
+    .catch((err) => {
       dispatch({
         type: SET_BOSLAR,
-        payload: null
+        payload: null,
       });
     });
 };

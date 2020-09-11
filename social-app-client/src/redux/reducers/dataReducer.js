@@ -11,16 +11,19 @@ import {
   SET_USERLIST,
   UPDATE_BOS,
   SEARCH_TAG,
-  SEARCH_USER
+  SEARCH_USER,
+  LOAD_MORE_BOS,
 } from "../types";
 
 const initialState = {
   boslar: [],
+  userBoslar: [],
   users: [],
   bos: {},
   loading: false,
   resultTag: [],
-  resultUser: []
+  resultUser: [],
+  lastVisible: "",
 };
 
 export default (state = initialState, action) => {
@@ -28,18 +31,31 @@ export default (state = initialState, action) => {
     case LOADING_DATA:
       return {
         ...state,
-        loading: true
+        loading: true,
       };
     case SET_BOSLAR:
       return {
         ...state,
-        boslar: action.payload,
-        loading: false
+        userBoslar: action.payload,
+        loading: false,
       };
+
+    case LOAD_MORE_BOS:
+      const lastVisible = action.payload[action.payload.length - 1].createdAt;
+      const newBos = action.payload.slice(0, action.payload.length - 1);
+      const newBoslar = state.boslar.concat(newBos);
+
+      return {
+        ...state,
+        boslar: newBoslar,
+        loading: false,
+        lastVisible,
+      };
+
     case SET_BOS:
       return {
         ...state,
-        bos: action.payload
+        bos: action.payload,
       };
     case UPDATE_BOS:
       return {};
@@ -47,57 +63,57 @@ export default (state = initialState, action) => {
       return {
         ...state,
         users: action.payload,
-        loading: false
+        loading: false,
       };
     case LIKE_BOS:
     case UNLIKE_BOS:
-      let index = state.boslar.findIndex(bos => bos.bosId === action.payload.bosId);
+      let index = state.boslar.findIndex((bos) => bos.bosId === action.payload.bosId);
       state.boslar[index] = action.payload;
       if (state.bos.bosId === action.payload.bosId) {
         state.bos = action.payload;
       }
       return {
-        ...state
+        ...state,
       };
     case DELETE_BOS:
-      let indexD = state.boslar.findIndex(bos => bos.bosId === action.payload);
+      let indexD = state.boslar.findIndex((bos) => bos.bosId === action.payload);
       state.boslar.splice(indexD, 1);
       return {
-        ...state
+        ...state,
       };
     case BOS_YAP:
       state.boslar.unshift(action.payload);
       return {
-        ...state
+        ...state,
       };
     case SUBMIT_COMMENT:
       return {
         ...state,
         bos: {
           ...state.bos,
-          comments: [action.payload, ...state.bos.comments]
-        }
+          comments: [action.payload, ...state.bos.comments],
+        },
       };
     case DELETE_COMMENT:
-      let indexC = state.bos.comments.findIndex(comment => comment.commentId === action.payload);
+      let indexC = state.bos.comments.findIndex((comment) => comment.commentId === action.payload);
       state.bos.comments.splice(indexC, 1);
       return {
-        ...state
+        ...state,
       };
     case SEARCH_TAG:
       let resultTag = [];
-      state.boslar.forEach(bos => {
+      state.boslar.forEach((bos) => {
         if (bos.body.includes(`#${action.payload}`)) {
           resultTag.push(bos);
         }
       });
       return {
         ...state,
-        resultTag
+        resultTag,
       };
     case SEARCH_USER:
       let resultUser = [];
-      state.users.forEach(user => {
+      state.users.forEach((user) => {
         if (user.handle.includes(action.payload)) {
           resultUser.push(user);
         }
@@ -105,7 +121,7 @@ export default (state = initialState, action) => {
 
       return {
         ...state,
-        resultUser
+        resultUser,
       };
 
     default:

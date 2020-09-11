@@ -12,7 +12,7 @@ exports.signup = (req, res) => {
     confirmPassword: req.body.confirmPassword,
     handle: req.body.handle,
     role: "user",
-    nickname: "User"
+    nickname: "User",
   };
 
   console.log(newUser);
@@ -28,18 +28,18 @@ exports.signup = (req, res) => {
   let token, userId;
   db.doc(`/users/${newUser.handle}`)
     .get()
-    .then(doc => {
+    .then((doc) => {
       if (doc.exists) {
         return res.status(400).json({ handle: "Bu nickname önceden alınmış!" });
       } else {
         return firebase.auth().createUserWithEmailAndPassword(newUser.email, newUser.password);
       }
     })
-    .then(data => {
+    .then((data) => {
       userId = data.user.uid;
       return data.user.getIdToken();
     })
-    .then(tokenId => {
+    .then((tokenId) => {
       token = tokenId;
       const userCredentials = {
         handle: newUser.handle,
@@ -48,14 +48,14 @@ exports.signup = (req, res) => {
         nickname: newUser.nickname,
         createdAt: new Date().toISOString(),
         imageUrl: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${noImg}?alt=media`,
-        userId
+        userId,
       };
       return db.doc(`/users/${newUser.handle}`).set(userCredentials);
     })
     .then(() => {
       return res.status(201).json({ token });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       if (err.code === "auth/email-already-in-use") {
         return res.status(400).json({ email: "Email is already taken" });
@@ -68,7 +68,7 @@ exports.signup = (req, res) => {
 exports.login = (req, res) => {
   const user = {
     email: req.body.email,
-    password: req.body.password
+    password: req.body.password,
   };
 
   const { valid, errors } = validateLoginData(user);
@@ -80,13 +80,13 @@ exports.login = (req, res) => {
   firebase
     .auth()
     .signInWithEmailAndPassword(user.email, user.password)
-    .then(data => {
+    .then((data) => {
       return data.user.getIdToken();
     })
-    .then(token => {
+    .then((token) => {
       return res.json({ token });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       if ((err.code = "auth/wrong-password")) {
         return res.status(403).json({ general: "Email veya şifre yanlış, lütfen tekrar dene" });
@@ -106,7 +106,7 @@ exports.addUserDetails = (req, res) => {
     .then(() => {
       return res.json({ message: "Details added succesfully" });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       return res.status(500).json({ error: err.code });
     });
@@ -117,7 +117,7 @@ exports.getUserDetails = (req, res) => {
   const userDetails = {};
   db.doc(`/users/${req.params.handle}`)
     .get()
-    .then(data => {
+    .then((data) => {
       if (data.exists) {
         userDetails.user = data.data();
         return db
@@ -129,9 +129,9 @@ exports.getUserDetails = (req, res) => {
         return res.status(404).json({ error: "Kullanıcı bulunamadı!" });
       }
     })
-    .then(data => {
+    .then((data) => {
       userDetails.boslar = [];
-      data.forEach(doc => {
+      data.forEach((doc) => {
         userDetails.boslar.push({
           body: doc.data().body,
           createdAt: doc.data().createdAt,
@@ -139,12 +139,13 @@ exports.getUserDetails = (req, res) => {
           userImage: doc.data().userImage,
           likeCount: doc.data().likeCount,
           commentCount: doc.data().commentCount,
-          bosId: doc.id
+          bosId: doc.id,
+          userNick: doc.data().userNick,
         });
       });
       return res.json(userDetails);
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ error: err.code });
     });
@@ -156,8 +157,8 @@ exports.getAllUsers = (req, res) => {
   db.collection("users")
     .orderBy("createdAt", "desc")
     .get()
-    .then(doc => {
-      doc.forEach(doc => {
+    .then((doc) => {
+      doc.forEach((doc) => {
         usersData.push({
           email: req.user.role === "admin" ? doc.data().email : null,
           createdAt: req.user.role === "admin" ? doc.data().createdAt : null,
@@ -165,12 +166,12 @@ exports.getAllUsers = (req, res) => {
           imageUrl: doc.data().imageUrl,
           role: req.user.role === "admin" ? doc.data().role : null,
           bio: doc.data().bio,
-          nickname: doc.data().nickname
+          nickname: doc.data().nickname,
         });
       });
       return res.json(usersData);
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ error: err.code });
     });
@@ -181,18 +182,15 @@ exports.getAuthenticatedUser = (req, res) => {
   let userDetail = {};
   db.doc(`/users/${req.user.handle}`)
     .get()
-    .then(data => {
+    .then((data) => {
       if (data.exists) {
         userDetail.credentials = data.data();
-        return db
-          .collection("likes")
-          .where("userHandle", "==", req.user.handle)
-          .get();
+        return db.collection("likes").where("userHandle", "==", req.user.handle).get();
       }
     })
-    .then(data => {
+    .then((data) => {
       userDetail.likes = [];
-      data.forEach(doc => {
+      data.forEach((doc) => {
         userDetail.likes.push(doc.data());
       });
       return db
@@ -202,9 +200,9 @@ exports.getAuthenticatedUser = (req, res) => {
         .limit(8)
         .get();
     })
-    .then(data => {
+    .then((data) => {
       userDetail.notifications = [];
-      data.forEach(doc => {
+      data.forEach((doc) => {
         userDetail.notifications.push({
           recipient: doc.data().recipient,
           sender: doc.data().sender,
@@ -212,12 +210,12 @@ exports.getAuthenticatedUser = (req, res) => {
           bosId: doc.data().bosId,
           type: doc.data().type,
           read: doc.data().read,
-          notificationId: doc.id
+          notificationId: doc.id,
         });
       });
       return res.json(userDetail);
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       return res.status(500).json({ error: err.code });
     });
@@ -234,9 +232,9 @@ exports.forgotPass = (req, res) => {
     .where("email", "==", email)
     .limit(1)
     .get()
-    .then(data => {
+    .then((data) => {
       if (data.size > 0) {
-        data.forEach(doc => {
+        data.forEach((doc) => {
           return firebase.auth().sendPasswordResetEmail(doc.data().email);
         });
       } else {
@@ -246,7 +244,7 @@ exports.forgotPass = (req, res) => {
     .then(() => {
       return res.json({ message: "Email başarıyla yollandı, spam kutunuza bakmayı unutmayın!" });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ error: err.code });
     });
@@ -286,9 +284,9 @@ exports.uploadImage = (req, res) => {
         resumable: false,
         metadata: {
           metadata: {
-            contentType: imageToBeUploaded.mimetype
-          }
-        }
+            contentType: imageToBeUploaded.mimetype,
+          },
+        },
       })
       .then(() => {
         const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${imageFileName}?alt=media`;
@@ -297,7 +295,7 @@ exports.uploadImage = (req, res) => {
       .then(() => {
         return res.json({ message: "image upload succesfully" });
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
         return res.status(500).json({ error: err.code });
       });
@@ -307,7 +305,7 @@ exports.uploadImage = (req, res) => {
 
 exports.markNotificationsRead = (req, res) => {
   let batch = db.batch();
-  req.body.forEach(notificationIds => {
+  req.body.forEach((notificationIds) => {
     const notification = db.doc(`/notifications/${notificationIds}`);
     batch.update(notification, { read: true });
   });
@@ -316,7 +314,7 @@ exports.markNotificationsRead = (req, res) => {
     .then(() => {
       return res.json({ message: "Bildirimler okundu olarak işaretlendi" });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       return res.status(500).json({ error: err.code });
     });
