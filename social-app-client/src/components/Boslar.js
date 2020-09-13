@@ -2,11 +2,12 @@ import React, { Component } from "react";
 import Link from "react-router-dom/Link";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { likeBos, unlikeBos } from "../redux/actions/dataActions";
+import { likeBos, unlikeBos, searchTag, searchUser } from "../redux/actions/dataActions";
 import { connect } from "react-redux";
 import BosDialog from "./BosDialog";
 import LikeButton from "./LikeButton";
 import BosDetailMenu from "./BosDetailMenu";
+import { withRouter } from "react-router-dom";
 
 //Metarial Stuff
 import Card from "@material-ui/core/Card";
@@ -16,44 +17,63 @@ import Typography from "@material-ui/core/Typography";
 import withStyles from "@material-ui/core/styles/withStyles";
 import Chip from "@material-ui/core/Chip";
 
+//Tagify
+import { ReactTagify } from "react-tagify";
+
 const styles = {
   card: {
     display: "flex",
     marginBottom: 20,
-    position: "relative"
+    position: "relative",
   },
   invSeparatorShort: {
     border: "none",
-    margin: 1
+    margin: 1,
   },
   image: {
     objectFit: "cover",
     borderRadius: "50%",
     width: "100%",
-    height: "100%"
+    height: "100%",
   },
   imageWrapper: {
     minWidth: 100,
-    height: 100
+    height: 100,
   },
   content: {
     padding: 15,
-    objectFit: "cover"
+    objectFit: "cover",
   },
   likeTitle: {
-    marginRight: 10
-  }
+    marginRight: 10,
+  },
 };
 
 class Boslar extends Component {
+  handleTags = (tag) => {
+    if (tag && tag.includes("#")) {
+      let location = {
+        pathname: "/search",
+        keywordProps: {
+          keyword: tag.substring(1),
+        },
+      };
+      this.props.searchTag(tag.substring(1));
+      this.props.searchUser(tag.substring(1));
+      this.props.history.push(location);
+    } else if (tag && tag.includes("@")) {
+      this.props.history.push(`/user/${tag.substring(1)}`);
+    }
+  };
+
   render() {
     dayjs.extend(relativeTime);
     const {
       bos,
       user: {
         authenticated,
-        credentials: { handle, role }
-      }
+        credentials: { handle, role },
+      },
     } = this.props;
     const { classes } = this.props;
     const detailMenu =
@@ -88,7 +108,16 @@ class Boslar extends Component {
           <Typography variant="body2" color="textSecondary">
             {dayjs(bos.createdAt).fromNow()}
           </Typography>
-          <Typography variant="body1">{bos.body}</Typography>
+
+          <ReactTagify
+            colors={"#673AB7"}
+            tagClicked={(tag) => {
+              this.handleTags(tag);
+            }}
+          >
+            <Typography variant="body1">{bos.body}</Typography>
+          </ReactTagify>
+
           <LikeButton bosId={bos.bosId} />
           <span className={classes.likeTitle}>{bos.likeCount} Beğeni</span>
           <BosDialog
@@ -110,8 +139,10 @@ class Boslar extends Component {
   }
 }
 
-const mapStateToProps = state => ({
-  user: state.user
+const mapStateToProps = (state) => ({
+  user: state.user,
 });
 
-export default connect(mapStateToProps, { likeBos, unlikeBos })(withStyles(styles)(Boslar));
+export default connect(mapStateToProps, { likeBos, unlikeBos, searchTag, searchUser })(
+  withStyles(styles)(withRouter(Boslar))
+);
