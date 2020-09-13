@@ -213,18 +213,50 @@ export const submitComment = (bosId, commentData) => (dispatch) => {
 
 //search tag
 export const searchTag = (keyword) => (dispatch) => {
-  dispatch({
-    type: SEARCH_TAG,
-    payload: keyword,
-  });
+  dispatch({ type: LOADING_DATA });
+
+  axios
+    .get("/boslar")
+    .then((res) => {
+      const payload = {
+        keyword,
+        boslar: res.data,
+      };
+      dispatch({
+        type: SEARCH_TAG,
+        payload: payload,
+      });
+    })
+    .catch((err) => {
+      dispatch({
+        type: SET_ERRORS,
+        payload: err.response.data,
+      });
+    });
 };
 
 //search user
 export const searchUser = (keyword) => (dispatch) => {
-  dispatch({
-    type: SEARCH_USER,
-    payload: keyword,
-  });
+  dispatch({ type: LOADING_DATA });
+
+  axios
+    .get("/users")
+    .then((res) => {
+      const payload = {
+        keyword,
+        users: res.data,
+      };
+      dispatch({
+        type: SEARCH_USER,
+        payload: payload,
+      });
+    })
+    .catch((err) => {
+      dispatch({
+        type: SET_ERRORS,
+        payload: err.response.data,
+      });
+    });
 };
 
 export const getUserPageData = (userHandle) => (dispatch) => {

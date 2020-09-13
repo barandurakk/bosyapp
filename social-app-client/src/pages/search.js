@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import Boslar from "../components/Boslar";
 import { connect } from "react-redux";
 import User from "../components/User";
-import { getAllUsers, getBos } from "../redux/actions/dataActions";
+import { getAllUsers, getBos, searchTag, searchUser } from "../redux/actions/dataActions";
 
 //Metarial Stuff
 import Grid from "@material-ui/core/Grid";
@@ -11,13 +11,11 @@ import Tab from "@material-ui/core/Tab";
 import Typography from "@material-ui/core/Typography";
 
 export class search extends Component {
-  state = {
-    index: 0
-  };
-
-  UNSAFE_componentWillMount() {
-    this.props.getAllUsers();
-    this.props.getBos();
+  constructor(props) {
+    super(props);
+    this.state = {
+      index: 0,
+    };
   }
 
   handleChange = (event, index) => {
@@ -25,21 +23,26 @@ export class search extends Component {
   };
 
   render() {
-    const { resultTag, resultUser } = this.props.data;
+    const { resultTag, resultUser, loading } = this.props.data;
+    const { auth } = this.props;
 
-    let tagResultMarkup =
-      resultTag.length > 0 ? (
-        resultTag.map(bos => <Boslar bos={bos} key={bos.bosId} />)
-      ) : (
-        <p>Böyle bir etiket yok :(</p>
-      );
+    let tagResultMarkup = loading ? (
+      <p>Yükleniyor...</p>
+    ) : resultTag.length > 0 ? (
+      resultTag.map((bos) => <Boslar bos={bos} key={bos.bosId} />)
+    ) : (
+      <p>Böyle bir etiket yok :(</p>
+    );
 
-    let userResultMarkup =
-      resultUser.length > 0 ? (
-        resultUser.map(user => <User user={user} key={user.handle} />)
-      ) : (
-        <p>Böyle bir kullanıcı yok :(</p>
-      );
+    let userResultMarkup = !auth ? (
+      <p>Üye girişi yapmadan kullanıcı arayamazsınız</p>
+    ) : loading ? (
+      <p>Yükleniyor..</p>
+    ) : resultUser.length <= 0 ? (
+      <p>Böyle bir kullanıcı yok :(</p>
+    ) : (
+      resultUser.map((user) => <User user={user} key={user.handle} />)
+    );
 
     return (
       <Grid container spacing={6}>
@@ -49,7 +52,7 @@ export class search extends Component {
               {this.props.location.keywordProps.keyword} için sonuçlar
             </Typography>
           ) : (
-            <Typography variant="h6">Sonuç bulunamadı :(</Typography>
+            <Typography variant="h6"> Sonuç bulunamadı :(</Typography>
           )}
           <Tabs
             value={this.state.index}
@@ -70,8 +73,9 @@ export class search extends Component {
   }
 }
 
-const mapStateToProps = state => ({
-  data: state.data
+const mapStateToProps = (state) => ({
+  data: state.data,
+  auth: state.user.authenticated,
 });
 
-export default connect(mapStateToProps, { getAllUsers, getBos })(search);
+export default connect(mapStateToProps, { getAllUsers, getBos, searchTag, searchUser })(search);

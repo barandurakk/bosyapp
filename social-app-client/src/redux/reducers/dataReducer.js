@@ -101,29 +101,41 @@ export default (state = initialState, action) => {
         ...state,
       };
     case SEARCH_TAG:
-      let resultTag = [];
-      state.boslar.forEach((bos) => {
-        if (bos.body.includes(`#${action.payload}`)) {
-          resultTag.push(bos);
+      let keywordTag = action.payload.keyword.toLowerCase();
+      let boslar = action.payload.boslar;
+      let searchResultTag = [];
+
+      boslar.map((bos) => {
+        let bosBody = bos.body.toLowerCase();
+        if (bosBody.includes(`#${keywordTag}`)) {
+          searchResultTag.push(bos);
         }
       });
+
       return {
         ...state,
-        resultTag,
+        resultTag: searchResultTag,
+        loading: false,
       };
+
     case SEARCH_USER:
-      let resultUser = [];
-      state.users.forEach((user) => {
-        if (user.handle.includes(action.payload)) {
-          resultUser.push(user);
+      let keywordUser = action.payload.keyword.toLowerCase();
+      let users = action.payload.users;
+      let searchResultUser = [];
+
+      users.map((user) => {
+        let userHandle = user.handle.toLowerCase();
+        let userNick = user.nickname.toLowerCase();
+        if (userHandle.includes(keywordUser) || userNick.includes(keywordUser)) {
+          searchResultUser.push(user);
         }
       });
 
       return {
         ...state,
-        resultUser,
+        resultUser: searchResultUser,
+        loading: false,
       };
-
     default:
       return state;
   }

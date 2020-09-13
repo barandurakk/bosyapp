@@ -1,7 +1,6 @@
 import React, { Fragment } from "react";
 import { connect } from "react-redux";
-import { searchTag, searchUser, getBos, getAllUsers } from "../redux/actions/dataActions";
-import Link from "react-router-dom/Link";
+import { searchTag, searchUser } from "../redux/actions/dataActions";
 import { withRouter } from "react-router-dom";
 
 //mui
@@ -57,7 +56,6 @@ class SearchInput extends React.Component {
         keyword: keyword,
       },
     };
-
     this.props.searchTag(keyword);
     this.props.searchUser(keyword);
     this.props.history.push(location);
@@ -112,6 +110,6 @@ class SearchInput extends React.Component {
   }
 }
 
-export default connect(null, { searchTag, searchUser, getBos, getAllUsers })(
+export default connect(null, { searchTag, searchUser })(
   withStyles(styles)(withRouter(SearchInput))
 );

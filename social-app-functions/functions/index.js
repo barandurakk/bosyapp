@@ -20,6 +20,7 @@ const {
   deleteComment,
   editBos,
   getLimitedBos,
+  searchBosByTag,
 } = require("./handlers/boslar");
 const {
   login,
