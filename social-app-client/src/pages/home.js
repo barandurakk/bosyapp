@@ -12,10 +12,6 @@ import Grid from "@material-ui/core/Grid";
 import { Button } from "@material-ui/core";
 
 export class home extends Component {
-  constructor(props) {
-    super(props);
-  }
-
   UNSAFE_componentWillMount() {
     let bosFilter = {
       lastVisible: "",
